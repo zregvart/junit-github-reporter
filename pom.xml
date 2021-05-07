@@ -31,9 +31,9 @@
     </license>
   </licenses>
   <scm>
-    <connection>scm:git:git://github.com/zregvart/maven-profile-expression-activator.git</connection>
-    <developerConnection>scm:git:ssh://github.com/zregvart/maven-profile-expression-activator.git</developerConnection>
-    <url>https://github.com/zregvart/maven-profile-expression-activator</url>
+    <connection>scm:git:git://github.com/zregvart/junit-github-reporter.git</connection>
+    <developerConnection>scm:git:ssh://github.com/zregvart/junit-github-reporter.git</developerConnection>
+    <url>https://github.com/zregvart/junit-github-reporter</url>
   </scm>
   <dependencyManagement>
     <dependencies>
