@@ -52,7 +52,7 @@ final class ClassSourceLookup {
 
         final List<Path> candidates = pathCandidatesFor(clazz);
 
-        while (path != null && !Files.exists(path.resolve(".git"))) {
+        while (path != null) {
             for (final Path candidate : candidates) {
                 final Path mightBePath = path.resolve(candidate);
                 if (Files.exists(mightBePath)) {
@@ -60,7 +60,14 @@ final class ClassSourceLookup {
                 }
             }
 
+            final Path dotGit = path.resolve(".git");
+            if (Files.exists(dotGit) && Files.isDirectory(dotGit)) {
+                // we tried up to the top of the project, where .git should be
+                break;
+            }
+
             path = path.getParent();
+
         }
 
         return fallbackClassToPath(clazz);
