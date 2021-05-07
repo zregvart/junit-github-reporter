@@ -43,31 +43,30 @@ final class ClassSourceLookup {
         }
 
         final URL location = codeSource.getLocation();
-        Path path;
+        final Path testClassPath;
         try {
-            path = Paths.get(location.toURI());
+            testClassPath = Paths.get(location.toURI());
         } catch (final URISyntaxException e) {
             throw new IllegalStateException(e);
         }
 
-        final List<Path> candidates = pathCandidatesFor(clazz);
-
-        while (path != null) {
-            for (final Path candidate : candidates) {
-                final Path mightBePath = path.resolve(candidate);
-                if (Files.exists(mightBePath)) {
-                    return mightBePath.normalize();
-                }
-            }
-
-            final Path dotGit = path.resolve(".git");
-            if (Files.exists(dotGit) && Files.isDirectory(dotGit)) {
-                // we tried up to the top of the project, where .git should be
+        Path projectRoot = testClassPath;
+        while (!Files.isDirectory(projectRoot.resolve(".git"))) {
+            final Path parent = projectRoot.getParent();
+            if (parent == null) {
                 break;
             }
 
-            path = path.getParent();
+            projectRoot = parent;
+        }
 
+        final List<Path> candidates = pathCandidatesFor(clazz);
+
+        for (final Path candidate : candidates) {
+            final Path mightBePath = projectRoot.resolve(candidate);
+            if (Files.exists(mightBePath)) {
+                return projectRoot.relativize(mightBePath);
+            }
         }
 
         return fallbackClassToPath(clazz);
@@ -87,11 +86,14 @@ final class ClassSourceLookup {
         candidates.add(sourceFilePath);
 
         final Package pkg = clazz.getPackage();
-        final String[] packages = pkg.getName().split("\\.");
-        Path packagePath = Paths.get(".");
-        for (final String p : packages) {
-            packagePath = packagePath.resolve(Paths.get(p));
+        Path packagePath = Paths.get("");
+        if (pkg != null) {
+            final String[] packages = pkg.getName().split("\\.");
+            for (final String p : packages) {
+                packagePath = packagePath.resolve(Paths.get(p));
+            }
         }
+
         final Path packageAndSourcePath = packagePath.resolve(sourceFilePath);
         candidates.add(packageAndSourcePath);
         candidates.add(Paths.get("src", "test", "java").resolve(packageAndSourcePath));

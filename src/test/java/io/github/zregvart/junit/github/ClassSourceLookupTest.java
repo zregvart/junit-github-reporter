@@ -21,16 +21,14 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ClassSourceLookupTest {
-    Path testClassPath = Paths.get("src", "test", "java", "io", "github", "zregvart", "junit", "github", "TestClass.java");
-
     @Test
     public void shouldFindPathToNestedTestClass() {
-        assertThat(ClassSourceLookup.classToPath(TestClass.NestedTest.class)).endsWith(testClassPath);
+        assertThat(ClassSourceLookup.classToPath(TestClass.NestedTest.class)).isEqualTo(TestClass.SOURCE_PATH);
     }
 
     @Test
     public void shouldFindPathToTestClass() {
-        assertThat(ClassSourceLookup.classToPath(TestClass.class)).endsWith(testClassPath);
+        assertThat(ClassSourceLookup.classToPath(TestClass.class)).isEqualTo(TestClass.SOURCE_PATH);
     }
 
     @Test

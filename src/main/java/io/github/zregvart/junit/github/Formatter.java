@@ -71,7 +71,7 @@ final class Formatter {
 
         final Status status = result.getStatus();
 
-        return String.format("::warning file=%s,line=%d,col=0::%s - %s", classToPath(testClazz), line, status, message);
+        return String.format("::error file=%s,line=%d,col=0::%s - %s", classToPath(testClazz), line, status, message);
     }
 
     private static String format(final ClassSource source, final TestExecutionResult result) {

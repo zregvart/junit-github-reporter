@@ -24,14 +24,14 @@ public class FormatterTest {
     public void shouldDetermineLine() {
         final Throwable throwable = TestClass.from(TestClass::failedTest);
 
-        assertThat(Formatter.determineLine(TestClass.class, TestExecutionResult.failed(throwable))).isEqualTo(27);
+        assertThat(Formatter.determineLine(TestClass.class, TestExecutionResult.failed(throwable))).isEqualTo(32);
     }
 
     @Test
     public void shouldDetermineLineOfNestedTest() {
         final Throwable throwable = TestClass.from(TestClass.NestedTest::failedTest);
 
-        assertThat(Formatter.determineLine(TestClass.NestedTest.class, TestExecutionResult.failed(throwable))).isEqualTo(22);
+        assertThat(Formatter.determineLine(TestClass.NestedTest.class, TestExecutionResult.failed(throwable))).isEqualTo(27);
     }
 
     @Test

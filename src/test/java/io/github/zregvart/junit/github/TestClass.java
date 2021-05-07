@@ -13,9 +13,14 @@
  */
 package io.github.zregvart.junit.github;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TestClass {
+
+    static Path SOURCE_PATH = Paths.get("src", "test", "java", "io", "github", "zregvart", "junit", "github", "TestClass.java");
 
     static class NestedTest {
         static void failedTest() {
