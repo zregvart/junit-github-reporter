@@ -21,11 +21,13 @@ import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.MethodSource;
 import org.junit.platform.launcher.TestIdentifier;
+import org.junitpioneer.jupiter.SetEnvironmentVariable;
 import org.junitpioneer.jupiter.StdIo;
 import org.junitpioneer.jupiter.StdOut;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SetEnvironmentVariable(key = "GITHUB_WORKSPACE", value = ".")
 public class GitHubCommandListenerTest {
 
     GitHubCommandListener listener = new GitHubCommandListener();

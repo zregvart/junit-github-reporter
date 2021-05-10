@@ -19,7 +19,7 @@ import org.junit.platform.engine.TestSource;
 import org.junit.platform.engine.support.descriptor.ClassSource;
 import org.junit.platform.engine.support.descriptor.MethodSource;
 
-import static io.github.zregvart.junit.github.ClassSourceLookup.classToPath;
+import static io.github.zregvart.junit.github.ClassSourceLookup.sourcePathFor;
 
 /**
  * Generates @see <a href=
@@ -71,7 +71,7 @@ final class Formatter {
 
         final Status status = result.getStatus();
 
-        return String.format("::error file=%s,line=%d,col=0::%s - %s", classToPath(testClazz), line, status, message);
+        return String.format("::error file=%s,line=%d,col=0::%s - %s", sourcePathFor(testClazz), line, status, message);
     }
 
     private static String format(final ClassSource source, final TestExecutionResult result) {

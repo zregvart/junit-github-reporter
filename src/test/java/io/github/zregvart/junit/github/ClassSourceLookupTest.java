@@ -16,23 +16,67 @@ package io.github.zregvart.junit.github;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import net.bytebuddy.ByteBuddy;
+
 import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.SetEnvironmentVariable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ClassSourceLookupTest {
-    @Test
-    public void shouldFindPathToNestedTestClass() {
-        assertThat(ClassSourceLookup.classToPath(TestClass.NestedTest.class)).isEqualTo(TestClass.SOURCE_PATH);
+    @SetEnvironmentVariable(key = "GITHUB_WORKSPACE", value = ".")
+    static class BasicCases {
+        @Test
+        public void shouldFindPathToNestedTestClass() {
+            assertThat(ClassSourceLookup.sourcePathFor(TestClass.NestedTest.class)).isEqualTo(TestClass.SOURCE_PATH);
+        }
+
+        @Test
+        public void shouldFindPathToTestClass() {
+            assertThat(ClassSourceLookup.sourcePathFor(TestClass.class)).isEqualTo(TestClass.SOURCE_PATH);
+        }
+
+        @Test
+        public void shouldProvideAFallback() {
+            assertThat(ClassSourceLookup.sourcePathFor(Object.class)).isEqualTo(Paths.get("src", "test", "java", "java", "lang", "Object.java"));
+        }
     }
 
-    @Test
-    public void shouldFindPathToTestClass() {
-        assertThat(ClassSourceLookup.classToPath(TestClass.class)).isEqualTo(TestClass.SOURCE_PATH);
+    @SetEnvironmentVariable(key = "GITHUB_WORKSPACE", value = "src/test/resources")
+    static class LookupWithinModule {
+        @Test
+        public void shouldFindSourceFilePathInModule() {
+            final Path sourcePathFor = ClassSourceLookup.sourcePathFor(createClass("io.github.zregvart.junit.github.module.TestInModule"));
+            final Path expected = Paths.get("module", "src", "test", "java", "io", "github", "zregvart", "junit", "github", "module", "TestInModule.java");
+
+            assertThat(sourcePathFor).isEqualTo(expected);
+        }
+
+        @Test
+        public void shouldFindSourceFilePathInSubModule() {
+            final Path sourcePathFor = ClassSourceLookup.sourcePathFor(createClass("io.github.zregvart.junit.github.submodule.TestInSubmodule"));
+            final Path expected = Paths.get("module", "submodule", "src", "test", "java", "io", "github", "zregvart", "junit", "github", "submodule",
+                "TestInSubmodule.java");
+
+            assertThat(sourcePathFor).isEqualTo(expected);
+        }
+
+        @Test
+        public void shouldFindSourceFilePathInTopLevelModule() {
+            final Path sourcePathFor = ClassSourceLookup.sourcePathFor(createClass("io.github.zregvart.junit.github.tlp.TestInTopProject"));
+            final Path expected = Paths.get("src", "test", "java", "io", "github", "zregvart", "junit", "github", "tlp",
+                "TestInTopProject.java");
+
+            assertThat(sourcePathFor).isEqualTo(expected);
+        }
     }
 
-    @Test
-    public void shouldProvideAFallback() {
-        assertThat(ClassSourceLookup.classToPath(Object.class)).extracting(Path::toString).isEqualTo(Paths.get("java", "lang", "Object.java").toString());
+    static Class<?> createClass(final String fullyQualified) {
+        return new ByteBuddy()
+            .subclass(Object.class)
+            .name(fullyQualified)
+            .make()
+            .load(ClassSourceLookupTest.class.getClassLoader())
+            .getLoaded();
     }
 }

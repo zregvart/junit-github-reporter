@@ -14,95 +14,70 @@
 package io.github.zregvart.junit.github;
 
 import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Tries to locate the file where a provided {@link Class} resides on the
  * filesystem.
  */
 final class ClassSourceLookup {
+    static final Supplier<Path> GITHUB_WORKSPACE = new Supplier<Path>() {
+
+        private Path githubWorkspace;
+
+        @Override
+        public Path get() {
+            if (githubWorkspace == null) {
+                // not really a problem if we write from multiple threads the
+                // value will be the same
+                final String githubWorkspaceFromEnvironment = System.getenv("GITHUB_WORKSPACE");
+                if (githubWorkspaceFromEnvironment == null || githubWorkspaceFromEnvironment.trim().isEmpty()) {
+                    return Paths.get(".");
+                }
+
+                githubWorkspace = Paths.get(githubWorkspaceFromEnvironment);
+            }
+            return githubWorkspace;
+        }
+    };
+
     /**
-     * Uses {@link CodeSource} to get the path to the {@link Class} file and
-     * then works its way up the filesystem tree to locate one of the candidate
-     * file paths. In case none is found, a fallback results in
-     * {@code package/Class.java} like path.
+     * Searches within {@code GITHUB_WORKSPACE} for file named
+     * {@code package/TestClass.java}.
      */
-    static Path classToPath(final Class<?> clazz) {
-        final ProtectionDomain protectionDomain = clazz.getProtectionDomain();
-        final CodeSource codeSource = protectionDomain.getCodeSource();
-        if (codeSource == null) {
-            return fallbackClassToPath(clazz);
-        }
+    static Path sourcePathFor(final Class<?> clazz) {
+        final Path githubWorkspace = GITHUB_WORKSPACE.get();
 
-        final URL location = codeSource.getLocation();
-        final Path testClassPath;
+        final Path sourceFileEndPath = sourceFilePathByConvention(clazz);
         try {
-            testClassPath = Paths.get(location.toURI());
-        } catch (final URISyntaxException e) {
-            throw new IllegalStateException(e);
-        }
-
-        Path projectRoot = testClassPath;
-        while (!Files.isDirectory(projectRoot.resolve(".git"))) {
-            final Path parent = projectRoot.getParent();
-            if (parent == null) {
-                break;
+            final Optional<Path> maybeSourceFilePath = Files
+                .find(githubWorkspace, 42, (path, attrs) -> attrs.isRegularFile() && path.endsWith(sourceFileEndPath))
+                .parallel()
+                .findFirst();
+            if (!maybeSourceFilePath.isPresent()) {
+                return fallbackSourceFilePath(sourceFileEndPath);
             }
-
-            projectRoot = parent;
+            return githubWorkspace.relativize(maybeSourceFilePath.get()).normalize();
+        } catch (final IOException e) {
+            throw new UncheckedIOException(e);
         }
-
-        final List<Path> candidates = pathCandidatesFor(clazz);
-
-        for (final Path candidate : candidates) {
-            final Path mightBePath = projectRoot.resolve(candidate);
-            if (Files.exists(mightBePath)) {
-                return projectRoot.relativize(mightBePath);
-            }
-        }
-
-        return fallbackClassToPath(clazz);
     }
 
-    private static Path fallbackClassToPath(final Class<?> clazz) {
-        return Paths.get(clazz.getName().replace('.', File.separatorChar) + ".java");
+    private static Path fallbackSourceFilePath(final Path sourceFilePath) {
+        return Paths.get("src", "test", "java").resolve(sourceFilePath);
     }
 
-    private static List<Path> pathCandidatesFor(final Class<?> clazz) {
-        final Class<?> clz = toplevelClassOf(clazz);
-
-        final String sourceFile = clz.getSimpleName() + ".java";
-
-        final List<Path> candidates = new ArrayList<>();
-        final Path sourceFilePath = Paths.get(sourceFile);
-        candidates.add(sourceFilePath);
-
-        final Package pkg = clazz.getPackage();
-        Path packagePath = Paths.get("");
-        if (pkg != null) {
-            final String[] packages = pkg.getName().split("\\.");
-            for (final String p : packages) {
-                packagePath = packagePath.resolve(Paths.get(p));
-            }
-        }
-
-        final Path packageAndSourcePath = packagePath.resolve(sourceFilePath);
-        candidates.add(packageAndSourcePath);
-        candidates.add(Paths.get("src", "test", "java").resolve(packageAndSourcePath));
-        candidates.add(Paths.get("src", "it", "java").resolve(packageAndSourcePath));
-
-        return candidates;
+    private static Path sourceFilePathByConvention(final Class<?> clazz) {
+        return Paths.get(topLevelClassOf(clazz).getName().replace('.', File.separatorChar) + ".java");
     }
 
-    private static Class<?> toplevelClassOf(final Class<?> clazz) {
+    private static Class<?> topLevelClassOf(final Class<?> clazz) {
         Class<?> clz = clazz;
         while (clz.getEnclosingClass() != null) {
             clz = clz.getEnclosingClass();
