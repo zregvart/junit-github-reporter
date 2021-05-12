@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 class TestClass {
 
@@ -26,6 +27,10 @@ class TestClass {
         static void failedTest() {
             assertThat(true).isFalse();
         }
+    }
+
+    static void abortedTest() {
+        assumeThat(true).isFalse();
     }
 
     static void failedTest() {

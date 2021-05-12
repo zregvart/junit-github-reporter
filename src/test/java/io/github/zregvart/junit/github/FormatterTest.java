@@ -24,14 +24,14 @@ public class FormatterTest {
     public void shouldDetermineLine() {
         final Throwable throwable = TestClass.from(TestClass::failedTest);
 
-        assertThat(Formatter.determineLine(TestClass.class, TestExecutionResult.failed(throwable))).isEqualTo(32);
+        assertThat(Formatter.determineLine(TestClass.class, TestExecutionResult.failed(throwable))).isEqualTo(37);
     }
 
     @Test
     public void shouldDetermineLineOfNestedTest() {
         final Throwable throwable = TestClass.from(TestClass.NestedTest::failedTest);
 
-        assertThat(Formatter.determineLine(TestClass.NestedTest.class, TestExecutionResult.failed(throwable))).isEqualTo(27);
+        assertThat(Formatter.determineLine(TestClass.NestedTest.class, TestExecutionResult.failed(throwable))).isEqualTo(28);
     }
 
     @Test
@@ -39,5 +39,21 @@ public class FormatterTest {
         final Throwable throwable = TestClass.from(TestClass::failedTest);
 
         assertThat(Formatter.determineMessage(TestExecutionResult.failed(throwable))).isEqualTo("Expecting value to be false but was true");
+    }
+
+    @Test
+    public void shouldFormatMessagesWithErrorSeverity() {
+        final Throwable failed = TestClass.from(TestClass::failedTest);
+
+        assertThat(Formatter.format(TestClass.class, TestExecutionResult.failed(failed))).isEqualTo(
+            "::error file=src/test/java/io/github/zregvart/junit/github/TestClass.java,line=37,col=0::FAILED - Expecting value to be false but was true");
+    }
+
+    @Test
+    public void shouldFormatMessagesWithWarningSeverity() {
+        final Throwable aborted = TestClass.from(TestClass::abortedTest);
+
+        assertThat(Formatter.format(TestClass.class, TestExecutionResult.aborted(aborted))).isEqualTo(
+            "::warning file=src/test/java/io/github/zregvart/junit/github/TestClass.java,line=33,col=0::ABORTED - assumption was not met due to:  Expecting value to be false but was true");
     }
 }

@@ -52,6 +52,18 @@ final class Formatter {
         return result.getThrowable().map(t -> t.getMessage()).orElse(result.toString()).replaceAll("\\R", " ").trim();
     }
 
+    static String format(final Class<?> testClazz, final TestExecutionResult result) {
+        final int line = determineLine(testClazz, result);
+
+        final String message = determineMessage(result);
+
+        final Status status = result.getStatus();
+
+        final String severity = result.getStatus() == Status.ABORTED ? "warning" : "error";
+
+        return String.format("::%s file=%s,line=%d,col=0::%s - %s", severity, sourcePathFor(testClazz), line, status, message);
+    }
+
     static <T extends TestSource> CommandFormatter forSource(final T source) {
         if (source instanceof MethodSource) {
             return result -> format((MethodSource) source, result);
@@ -62,16 +74,6 @@ final class Formatter {
         }
 
         throw new IllegalArgumentException("Unsupported source type: " + source.getClass().getName());
-    }
-
-    private static String format(final Class<?> testClazz, final TestExecutionResult result) {
-        final int line = determineLine(testClazz, result);
-
-        final String message = determineMessage(result);
-
-        final Status status = result.getStatus();
-
-        return String.format("::error file=%s,line=%d,col=0::%s - %s", sourcePathFor(testClazz), line, status, message);
     }
 
     private static String format(final ClassSource source, final TestExecutionResult result) {

@@ -51,6 +51,6 @@ public class GitHubCommandListenerTest {
 
         final String[] capturedLines = out.capturedLines();
         assertThat(capturedLines).hasSize(1);
-        assertThat(capturedLines[0]).isEqualTo("::error file=" + TestClass.SOURCE_PATH + ",line=32,col=0::FAILED - Expecting value to be false but was true");
+        assertThat(capturedLines[0]).isEqualTo("::error file=" + TestClass.SOURCE_PATH + ",line=37,col=0::FAILED - Expecting value to be false but was true");
     }
 }
